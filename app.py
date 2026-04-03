@@ -473,7 +473,7 @@ st.info("👉 Use this format to upload your file for bulk prediction.")
 upload_type = st.radio("Upload format", ["CSV", "Excel", "JSON", "Google Drive Link"],
                            horizontal=True)
 
-    df_uploaded = None
+df_uploaded = None
 
     if upload_type in ["CSV", "Excel", "JSON"]:
         ext_map = {"CSV": ["csv"], "Excel": ["xlsx","xls"], "JSON": ["json"]}
