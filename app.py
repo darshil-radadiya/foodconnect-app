@@ -434,6 +434,42 @@ elif nav == "📂 Bulk Scanner":
     st.markdown("Upload a dataset to predict ratings for all restaurants at once.")
     st.divider()
 
+    # ================= SAMPLE FILE DOWNLOAD =================
+
+st.subheader("📥 Download Sample File")
+
+sample_data = pd.DataFrame({
+    "location": ["Ahmedabad", "Mumbai"],
+    "cuisine": ["North Indian", "Chinese"],
+    "cost": [500, 800],
+    "votes": [120, 250],
+    "online_order": ["Yes", "No"],
+    "table_booking": ["No", "Yes"]
+})
+
+# CSV download
+csv_sample = sample_data.to_csv(index=False).encode("utf-8")
+
+st.download_button(
+    label="📄 Download Sample CSV",
+    data=csv_sample,
+    file_name="sample_foodconnect.csv",
+    mime="text/csv"
+)
+
+# Excel download
+buffer = io.BytesIO()
+sample_data.to_excel(buffer, index=False, engine='openpyxl')
+
+st.download_button(
+    label="📊 Download Sample Excel",
+    data=buffer.getvalue(),
+    file_name="sample_foodconnect.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
+
+st.info("👉 Use this format to upload your file for bulk prediction.")
+
     upload_type = st.radio("Upload format", ["CSV", "Excel", "JSON", "Google Drive Link"],
                            horizontal=True)
 
