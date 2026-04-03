@@ -470,7 +470,7 @@ st.download_button(
 
 st.info("👉 Use this format to upload your file for bulk prediction.")
 
-    upload_type = st.radio("Upload format", ["CSV", "Excel", "JSON", "Google Drive Link"],
+upload_type = st.radio("Upload format", ["CSV", "Excel", "JSON", "Google Drive Link"],
                            horizontal=True)
 
     df_uploaded = None
