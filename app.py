@@ -435,50 +435,56 @@ elif nav == "📂 Bulk Scanner":
     st.divider()
 
     # ================= SAMPLE FILE DOWNLOAD =================
+    st.subheader("📥 Download Sample File")
 
-st.subheader("📥 Download Sample File")
+    sample_data = pd.DataFrame({
+        "location": ["Ahmedabad", "Mumbai"],
+        "cuisine": ["North Indian", "Chinese"],
+        "cost": [500, 800],
+        "votes": [120, 250],
+        "online_order": ["Yes", "No"],
+        "table_booking": ["No", "Yes"]
+    })
 
-sample_data = pd.DataFrame({
-    "location": ["Ahmedabad", "Mumbai"],
-    "cuisine": ["North Indian", "Chinese"],
-    "cost": [500, 800],
-    "votes": [120, 250],
-    "online_order": ["Yes", "No"],
-    "table_booking": ["No", "Yes"]
-})
+    # CSV download
+    csv_sample = sample_data.to_csv(index=False).encode("utf-8")
 
-# CSV download
-csv_sample = sample_data.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        label="📄 Download Sample CSV",
+        data=csv_sample,
+        file_name="sample_foodconnect.csv",
+        mime="text/csv"
+    )
 
-st.download_button(
-    label="📄 Download Sample CSV",
-    data=csv_sample,
-    file_name="sample_foodconnect.csv",
-    mime="text/csv"
-)
+    # Excel download
+    buffer = io.BytesIO()
+    sample_data.to_excel(buffer, index=False, engine='openpyxl')
 
-# Excel download
-buffer = io.BytesIO()
-sample_data.to_excel(buffer, index=False, engine='openpyxl')
+    st.download_button(
+        label="📊 Download Sample Excel",
+        data=buffer.getvalue(),
+        file_name="sample_foodconnect.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
-st.download_button(
-    label="📊 Download Sample Excel",
-    data=buffer.getvalue(),
-    file_name="sample_foodconnect.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
+    st.info("👉 Use this format to upload your file for bulk prediction.")
 
-st.info("👉 Use this format to upload your file for bulk prediction.")
+    # ================= UPLOAD TYPE =================
+    upload_type = st.radio(
+        "Upload format",
+        ["CSV", "Excel", "JSON", "Google Drive Link"],
+        horizontal=True
+    )
 
-upload_type = st.radio("Upload format", ["CSV", "Excel", "JSON", "Google Drive Link"],
-                           horizontal=True)
-
-df_uploaded = None
+    df_uploaded = None
 
     if upload_type in ["CSV", "Excel", "JSON"]:
         ext_map = {"CSV": ["csv"], "Excel": ["xlsx","xls"], "JSON": ["json"]}
-        file = st.file_uploader(f"Upload your {upload_type} file",
-                                type=ext_map[upload_type])
+        file = st.file_uploader(
+            f"Upload your {upload_type} file",
+            type=ext_map[upload_type]
+        )
+
         if file:
             try:
                 if upload_type == "CSV":
@@ -494,8 +500,8 @@ df_uploaded = None
         gdrive_url = st.text_input("Paste Google Drive shareable CSV link")
         if gdrive_url and st.button("Load from Drive"):
             try:
-                file_id   = gdrive_url.split("/d/")[1].split("/")[0]
-                direct    = f"https://drive.google.com/uc?id={file_id}&export=download"
+                file_id = gdrive_url.split("/d/")[1].split("/")[0]
+                direct = f"https://drive.google.com/uc?id={file_id}&export=download"
                 df_uploaded = pd.read_csv(direct)
                 st.success("Loaded from Google Drive!")
             except Exception as e:
