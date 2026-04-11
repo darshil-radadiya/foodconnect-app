@@ -356,7 +356,6 @@ with st.sidebar:
     )
 
    
-
 # ──────────────────────────────────────────────────────────────────────────────
 # TAB 1 — MANUAL PREDICTION
 # ──────────────────────────────────────────────────────────────────────────────
@@ -374,57 +373,97 @@ if nav == "🎯 Manual Prediction":
             rest_type = st.selectbox("🏪 Restaurant Type", rest_types)
 
         with c2:
-            cost          = st.number_input("💰 Avg Cost for 2 (₹)", min_value=50, max_value=5000, value=500, step=50)
-            votes         = st.number_input("🗳️ Number of Votes/Ratings", min_value=1, max_value=50000, value=200, step=10)
-            online_order  = st.selectbox("🛵 Online Delivery Available?", ["Yes", "No"])
-            table_booking = st.selectbox("📅 Table Booking Available?", ["No", "Yes"])
+            cost          = st.number_input("💰 Avg Cost for 2 (₹)", min_value=50, max_value=5000, value=500)
+            votes         = st.number_input("🗳️ Number of Votes", min_value=1, max_value=50000, value=200)
+            online_order  = st.selectbox("🛵 Online Delivery", ["Yes", "No"])
+            table_booking = st.selectbox("📅 Table Booking", ["No", "Yes"])
 
-        submitted = st.form_submit_button("⚡ Predict Rating", use_container_width=True, type="primary")
+        submitted = st.form_submit_button("⚡ Predict Restaurant", use_container_width=True)
 
     if submitted:
+        # prediction
         oo = 1 if online_order == "Yes" else 0
         tb = 1 if table_booking == "Yes" else 0
-        row_df  = build_feature_row(location, cost, cuisine, votes, oo, tb, rest_type, location)
-        pred    = predict_rating(row_df)
-        s       = stars(pred)
-        lbl     = rating_label(pred)
 
+        row_df = build_feature_row(location, cost, cuisine, votes, oo, tb, rest_type, location)
+        pred   = predict_rating(row_df)
+        s      = stars(pred)
+        lbl    = rating_label(pred)
+
+        # load dataset
+        df = pd.read_csv("zomato.csv")
+        df.columns = df.columns.str.strip().str.lower()
+
+        # fix columns
+        df.rename(columns={
+            'cuisines type': 'cuisine',
+            'area': 'location'
+        }, inplace=True)
+
+        # filter data
+        filtered = df[
+            (df['location'].str.lower().str.contains(location.lower(), na=False)) &
+            (df['cuisine'].str.lower().str.contains(cuisine.lower(), na=False))
+        ]
+
+        if filtered.empty:
+            filtered = df[
+                df['location'].str.lower().str.contains(location.lower(), na=False)
+            ]
+
+        # sort best restaurant
+        if 'votes' in df.columns:
+            filtered = filtered.sort_values(by='votes', ascending=False)
+
+        # FIXED NAME COLUMN
+        if 'name' in df.columns:
+            name_col = 'name'
+        elif 'restaurant name' in df.columns:
+            name_col = 'restaurant name'
+        else:
+            name_col = None
+
+        # get restaurant name safely
+        if not filtered.empty and name_col:
+            value = filtered.iloc[0][name_col]
+            restaurant_name = value if isinstance(value, str) else "Recommended Restaurant"
+        else:
+            restaurant_name = "Recommended Restaurant"
+
+        # UI OUTPUT (SAFE HTML)
         st.markdown("<br>", unsafe_allow_html=True)
-        col_a, col_b, col_c = st.columns([1,2,1])
-        with col_b:
-            st.markdown(f"""
-            <div class="pred-card">
-                <div style="font-size:.9rem;color:#86efac;margin-bottom:6px;">PREDICTED RATING</div>
-                <div class="rating-num">{pred:.1f}</div>
-                <div class="stars">{s}</div>
-                <div class="rating-lbl">{lbl}</div>
-                <hr style="border-color:#2d6a2d;margin:16px 0;">
-                <div style="display:flex;justify-content:space-around;font-size:.85rem;color:#86efac;">
-                    <span>📍 {location}</span>
-                    <span>🍜 {cuisine[:25]}</span>
-                </div>
-                <div style="display:flex;justify-content:space-around;font-size:.85rem;color:#86efac;margin-top:8px;">
-                    <span>💰 ₹{cost}</span>
-                    <span>🗳️ {votes} votes</span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
 
-        st.markdown("<br>", unsafe_allow_html=True)
-        m1, m2, m3, m4 = st.columns(4)
-        for col, label, val, unit in [
-            (m1, "Predicted Rating", f"{pred:.2f}", "/ 5.0"),
-            (m2, "Star Grade",       s[:5],          ""),
-            (m3, "Assessment",       lbl.split(" ",1)[0], lbl.split(" ",1)[-1]),
-            (m4, "Cost per Head",    f"₹{cost//2}",  "per person"),
-        ]:
-            col.markdown(f"""
-            <div class="metric-card">
-                <div class="label">{label}</div>
-                <div class="value">{val}</div>
-                <div class="unit">{unit}</div>
-            </div>""", unsafe_allow_html=True)
+        col1, col2, col3 = st.columns([1,2,1])
 
+        with col2:
+            html = f"""
+<div style="background: linear-gradient(135deg,#1c2e1c,#1e3320);
+            border:1px solid #2d6a2d;
+            border-radius:18px;
+            padding:30px;
+            text-align:center;">
+
+<h2 style="color:#4ade80;">🍽️ {restaurant_name}</h2>
+
+<h1 style="color:#4ade80;">{pred:.1f}</h1>
+<div style="color:#facc15;font-size:22px;">{s}</div>
+<div style="color:#86efac;">{lbl}</div>
+
+<hr style="border-color:#2d6a2d;margin:16px 0;">
+
+<div style="display:flex;justify-content:space-around;color:#86efac;">
+    <span>📍 {location}</span>
+    <span>🍜 {cuisine}</span>
+</div>
+
+<div style="display:flex;justify-content:space-around;color:#86efac;margin-top:8px;">
+    <span>💰 ₹{cost}</span>
+    <span>🗳️ {votes} votes</span>
+</div>
+
+</div>
+"""
+            st.markdown(html, unsafe_allow_html=True)
 
 # ──────────────────────────────────────────────────────────────────────────────
 # TAB 2 — BULK SCANNER
